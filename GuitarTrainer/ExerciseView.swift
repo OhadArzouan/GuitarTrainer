@@ -31,8 +31,8 @@ struct ExerciseView: View {
                     .font(.title2)
                     .fontWeight(.bold)
                 
-                // Show note type information for Single String and Scale Pattern exercises
-                if exercise == .singleStrings || exercise == .scalePattern {
+                // Show note type information for Single String, Scale Pattern, and Random Notes exercises
+                if exercise == .singleStrings || exercise == .scalePattern || exercise == .randomNotes {
                     Text(useOnlyFlats ? "Using natural and flats only" : "Using natural, flats and sharps")
                         .font(.caption)
                         .foregroundColor(.secondary)

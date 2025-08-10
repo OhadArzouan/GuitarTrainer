@@ -146,7 +146,7 @@ class NoteRandomizer: ObservableObject {
     @AppStorage("useOnlyFlats") var useOnlyFlats: Bool = false
     @AppStorage("useShortIntervals") var useShortIntervals: Bool = false
     private var recentNotes: [String] = []
-    private var beatCount = 0
+    private var beatCount = 1
     private let maxRecentNotes = 5
     
     func randomizeNote(for exercise: Exercise) {
