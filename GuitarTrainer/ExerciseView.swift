@@ -106,10 +106,6 @@ struct ExerciseView: View {
                     )
                 }
                 
-                Text(noteDescription)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
                 // Pattern selection for Random Notes and Note Intervals exercises
                 if exercise == .randomNotes || exercise == .noteIntervals {
                     Button(action: {
@@ -170,9 +166,9 @@ struct ExerciseView: View {
     private var noteDescription: String {
         switch exercise {
         case .singleStrings:
-            return "All Notes (Sharps & Flats)"
+            return useOnlyFlats ? "Natural and Flats Only" : "All Notes (Sharps & Flats)"
         case .scalePattern:
-            return "All Notes (Sharps & Flats)"
+            return useOnlyFlats ? "Natural and Flats Only" : "All Notes (Sharps & Flats)"
         case .randomNotes:
             return "Auto-changing Notes"
         case .noteIntervals:

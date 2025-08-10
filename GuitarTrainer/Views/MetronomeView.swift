@@ -18,6 +18,11 @@ struct MetronomeView: View {
             // Visual metronome indicator
             Circle()
                 .fill(audioManager.metronomeFlash ? (audioManager.currentBeat == 1 && audioManager.timeSignature != .justBeat ? Color.green : Color.red) : Color.gray.opacity(0.3))
+                .onChange(of: audioManager.metronomeFlash) {
+                    if audioManager.metronomeFlash {
+                        print("🔴 Visual: currentBeat=\(audioManager.currentBeat), timeSignature=\(audioManager.timeSignature.rawValue), isGreen=\(audioManager.currentBeat == 1 && audioManager.timeSignature != .justBeat)")
+                    }
+                }
                 .frame(width: 100, height: 100)
                 .animation(.easeInOut(duration: 0.1), value: audioManager.metronomeFlash)
                 .overlay(

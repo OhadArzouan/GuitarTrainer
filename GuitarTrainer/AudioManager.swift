@@ -179,8 +179,8 @@ class AudioManager: NSObject, ObservableObject {
     
     func startMetronome(tempo: Int, exercise: Exercise? = nil, noteRandomizer: NoteRandomizer? = nil) {
         stopMetronome()
-        // Reset beat counter when starting
-        currentBeat = 1
+        // Start with beat 0, so first tick becomes beat 1
+        currentBeat = 0
         let interval = 60.0 / Double(tempo)
         
         metronomeTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
@@ -205,14 +205,27 @@ class AudioManager: NSObject, ObservableObject {
             metronomePlayer.stop()
         }
         
+        // Increment beat counter FIRST, so we play the correct beat
+        currentBeat += 1
+        if currentBeat > timeSignature.beatsPerMeasure {
+            currentBeat = 1
+        }
+        
+        // Debug: Print current beat and timing info
+        print("🎵 playTick: currentBeat=\(currentBeat), timeSignature=\(timeSignature.rawValue)")
+        
         // Determine if this is a downbeat and select appropriate buffer
         let isCurrentlyDownbeat = (currentBeat == 1) && (timeSignature != .justBeat)
         let bufferToPlay: AVAudioPCMBuffer?
         
+        print("🎵 isCurrentlyDownbeat=\(isCurrentlyDownbeat)")
+        
         if isCurrentlyDownbeat {
             bufferToPlay = downbeatBuffers[metronomeSound] ?? metronomeBuffers[metronomeSound]
+            print("🎵 Playing DOWNBEAT sound")
         } else {
             bufferToPlay = metronomeBuffers[metronomeSound]
+            print("🎵 Playing normal sound")
         }
         
         if let buffer = bufferToPlay {
@@ -227,12 +240,6 @@ class AudioManager: NSObject, ObservableObject {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 self.metronomeFlash = false
             }
-        }
-        
-        // Advance beat counter AFTER playing the current beat
-        currentBeat += 1
-        if currentBeat > timeSignature.beatsPerMeasure {
-            currentBeat = 1
         }
     }    
 
