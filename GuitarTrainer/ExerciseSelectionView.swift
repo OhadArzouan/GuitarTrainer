@@ -2,7 +2,8 @@ import SwiftUI
 
 struct ExerciseSelectionView: View {
     @State private var selectedExercise: Exercise = .singleStrings
-    @AppStorage("defaultTempo") private var tempo: Double = 120
+    @AppStorage("sessionTempo") private var tempo: Double = 120
+    @AppStorage("defaultTempo") private var defaultTempo: Double = 120
     @AppStorage("defaultDuration") private var duration: Double = 5
     
     var body: some View {
@@ -14,8 +15,8 @@ struct ExerciseSelectionView: View {
             
             // Exercise Selection
             VStack(alignment: .leading, spacing: 15) {
-                Text("Exercise Type")
-                    .font(.headline)
+                // Text("Exercise Type")
+                    // .font(.headline)
                 
                 ForEach(Exercise.allCases, id: \.self) { exercise in
                     ExerciseRow(
@@ -33,6 +34,12 @@ struct ExerciseSelectionView: View {
                 HStack {
                     Text("Tempo")
                         .font(.headline)
+                    Spacer()
+                    Button("Reset") {
+                        tempo = defaultTempo
+                    }
+                    .font(.caption)
+                    .foregroundColor(.blue)
                     Spacer()
                     Text("\(Int(tempo)) BPM")
                         .font(.subheadline)
@@ -65,7 +72,6 @@ struct ExerciseSelectionView: View {
             // Start Button
             NavigationLink(destination: ExerciseView(
                 exercise: selectedExercise,
-                tempo: Int(tempo),
                 duration: Int(duration)
             )) {
                 Text("Start Exercise")
@@ -80,7 +86,7 @@ struct ExerciseSelectionView: View {
             .padding(.horizontal)
             .padding(.bottom)
         }
-        .navigationTitle("Setup")
+        // .navigationTitle("Setup")
         .navigationBarTitleDisplayMode(.inline)
     }
 }

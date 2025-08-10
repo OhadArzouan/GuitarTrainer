@@ -8,19 +8,19 @@ struct ExerciseView: View {
     @StateObject private var audioManager = AudioManager()
     @StateObject private var noteRandomizer = NoteRandomizer()
     @State private var timeRemaining: Int
-    @State private var tempo: Double
+    @AppStorage("sessionTempo") private var tempo: Double = 120
+    @AppStorage("defaultTempo") private var defaultTempo: Double = 120
     @AppStorage("useOnlyFlats") private var useOnlyFlats: Bool = false
     @State private var isActive = false
     @State private var timer: Timer?
     @State private var showNoteDropdown = false
     @State private var showPatternSelection = false
     
-    init(exercise: Exercise, tempo: Int, duration: Int) {
+    init(exercise: Exercise, duration: Int) {
         self.exercise = exercise
-        self.initialTempo = tempo
+        self.initialTempo = 120 // Will be set from defaultTempo on appear
         self.duration = duration
         self._timeRemaining = State(initialValue: duration * 60) // Convert to seconds
-        self._tempo = State(initialValue: Double(tempo)) // Initialize tempo from settings
     }
     
     var body: some View {
@@ -40,17 +40,18 @@ struct ExerciseView: View {
                 
                 VStack(spacing: 10) {
                     HStack {
-                        Text("Tempo: \(Int(tempo)) BPM")
+                        Text("Tempo")
+                            .font(.headline)
+                        Spacer()
+                        Button("Reset") {
+                            tempo = defaultTempo
+                        }
+                        .font(.caption)
+                        .foregroundColor(.blue)
+                        Spacer()
+                        Text("\(Int(tempo)) BPM")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
-                        
-                        Spacer()
-                        
-                        // Visual metronome indicator
-                        Circle()
-                            .fill(audioManager.metronomeFlash ? Color.red : Color.gray.opacity(0.3))
-                            .frame(width: 12, height: 12)
-                            .animation(.easeInOut(duration: 0.1), value: audioManager.metronomeFlash)
                     }
                     
                     // Tempo Slider
@@ -71,7 +72,7 @@ struct ExerciseView: View {
                             .foregroundColor(.secondary)
                         Spacer()
                     }
-                    Slider(value: $audioManager.metronomeVolume, in: 0.1...1.0, step: 0.1)
+                    Slider(value: $audioManager.metronomeVolume, in: 0.1...1.0, step: 0.05)
                         .accentColor(.blue)
                 }
             }
@@ -362,6 +363,6 @@ struct PatternSelectionSheet: View {
 
 #Preview {
     NavigationView {
-        ExerciseView(exercise: .singleStrings, tempo: 120, duration: 5)
+        ExerciseView(exercise: .singleStrings, duration: 5)
     }
 }

@@ -6,10 +6,31 @@ class AudioManager: NSObject, ObservableObject {
     private var audioEngine: AVAudioEngine!
     private var metronomePlayer: AVAudioPlayerNode!
     private var metronomeBuffers: [String: AVAudioPCMBuffer] = [:]
+    private var downbeatBuffers: [String: AVAudioPCMBuffer] = [:]
     
     @Published var metronomeFlash = false
     @AppStorage("metronomeVolume") var metronomeVolume: Double = 0.7
-
+    @Published var currentBeat = 1
+    @Published var isDownbeat = false
+    
+    enum TimeSignature: String, CaseIterable {
+        case justBeat = "1/1"
+        case threeFour = "3/4"
+        case fourFour = "4/4"
+        case sixEight = "6/8"
+        
+        var beatsPerMeasure: Int {
+            switch self {
+            case .justBeat: return 1
+            case .threeFour: return 3
+            case .fourFour: return 4
+            case .sixEight: return 6
+            }
+        }
+    }
+    
+    @Published var timeSignature: TimeSignature = .justBeat
+    
     // Metronome properties
     private var metronomeTimer: Timer?
     @AppStorage("metronomeSound") private var metronomeSound: String = "electronic"
@@ -79,11 +100,33 @@ class AudioManager: NSObject, ObservableObject {
             waveform: .sine
         )
         
-        // Soft Tick (600Hz, 120ms)
+        // Soft Tick (600Hz, 30ms)
         metronomeBuffers["soft"] = createSoundBuffer(
             format: format,
             frequency: 600,
-            duration: 0.12,
+            duration: 0.03,
+            waveform: .sine
+        )
+        
+        // Create downbeat versions (higher pitch for beat 1)
+        downbeatBuffers["electronic"] = createSoundBuffer(
+            format: format,
+            frequency: 1000, // Higher than 800Hz
+            duration: 0.1,
+            waveform: .sine
+        )
+        
+        downbeatBuffers["digital"] = createSoundBuffer(
+            format: format,
+            frequency: 1500, // Higher than 1200Hz
+            duration: 0.05,
+            waveform: .square
+        )
+        
+        downbeatBuffers["soft"] = createSoundBuffer(
+            format: format,
+            frequency: 750, // Higher than 600Hz
+            duration: 0.03,
             waveform: .sine
         )
     }
@@ -135,8 +178,9 @@ class AudioManager: NSObject, ObservableObject {
     // MARK: - Metronome Control
     
     func startMetronome(tempo: Int, exercise: Exercise? = nil, noteRandomizer: NoteRandomizer? = nil) {
-        stopMetronome() // Stop any existing metronome
-        
+        stopMetronome()
+        // Reset beat counter when starting
+        currentBeat = 1
         let interval = 60.0 / Double(tempo)
         
         metronomeTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
@@ -149,8 +193,6 @@ class AudioManager: NSObject, ObservableObject {
                 }
             }
         }
-        
-
     }
     
     func stopMetronome() {
@@ -163,27 +205,37 @@ class AudioManager: NSObject, ObservableObject {
             metronomePlayer.stop()
         }
         
-        // Get the selected metronome sound buffer
-        guard let buffer = metronomeBuffers[metronomeSound] else {
-            // Fallback to electronic sound if selected sound not found
-            return
+        // Determine if this is a downbeat and select appropriate buffer
+        let isCurrentlyDownbeat = (currentBeat == 1) && (timeSignature != .justBeat)
+        let bufferToPlay: AVAudioPCMBuffer?
+        
+        if isCurrentlyDownbeat {
+            bufferToPlay = downbeatBuffers[metronomeSound] ?? metronomeBuffers[metronomeSound]
+        } else {
+            bufferToPlay = metronomeBuffers[metronomeSound]
         }
         
-        metronomePlayer.scheduleBuffer(buffer, at: nil, options: [], completionHandler: nil)
-        metronomePlayer.volume = Float(metronomeVolume)
-        metronomePlayer.play()
+        if let buffer = bufferToPlay {
+            metronomePlayer.scheduleBuffer(buffer, at: nil, options: [], completionHandler: nil)
+            metronomePlayer.volume = Float(metronomeVolume)
+            metronomePlayer.play()
+        }
         
-        // Visual feedback
         DispatchQueue.main.async {
             self.metronomeFlash = true
+            
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 self.metronomeFlash = false
             }
         }
         
+        // Advance beat counter AFTER playing the current beat
+        currentBeat += 1
+        if currentBeat > timeSignature.beatsPerMeasure {
+            currentBeat = 1
+        }
+    }    
 
-    }
-    
     func updateMetronomeSound(_ newSound: String) {
         // Stop any currently playing preview ticks first
         metronomePlayer.stop()

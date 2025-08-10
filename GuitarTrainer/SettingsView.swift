@@ -4,6 +4,7 @@ struct SettingsView: View {
     @AppStorage("defaultTempo") private var defaultTempo: Double = 120
     @AppStorage("defaultDuration") private var defaultDuration: Double = 5
     @AppStorage("metronomeSound") private var metronomeSound: String = "electronic"
+    @AppStorage("metronomeVolume") private var metronomeVolume: Double = 0.7
     @AppStorage("useOnlyFlats") private var useOnlyFlats: Bool = false
     @AppStorage("useShortIntervals") private var useShortIntervals: Bool = false
     @StateObject private var audioManager = AudioManager()
@@ -64,10 +65,10 @@ struct SettingsView: View {
                             Text("Volume")
                                 .font(.headline)
                             Spacer()
-                            Text("\(Int(audioManager.metronomeVolume * 100))%")
+                            Text("\(Int(metronomeVolume * 100))%")
                                 .foregroundColor(.secondary)
                         }
-                        Slider(value: $audioManager.metronomeVolume, in: 0.1...1.0, step: 0.1)
+                        Slider(value: $metronomeVolume, in: 0...1, step: 0.05)
                             .accentColor(.blue)
                     }
                     

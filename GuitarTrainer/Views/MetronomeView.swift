@@ -2,7 +2,7 @@ import SwiftUI
 
 struct MetronomeView: View {
     @StateObject private var audioManager = AudioManager()
-    @AppStorage("currentTempo") private var tempo: Double = 120
+    @AppStorage("sessionTempo") private var tempo: Double = 120
     @AppStorage("defaultTempo") private var defaultTempo: Double = 120
     @State private var isPlaying = false
     @State private var tapTimes: [Date] = []
@@ -17,29 +17,51 @@ struct MetronomeView: View {
             
             // Visual metronome indicator
             Circle()
-                .fill(audioManager.metronomeFlash ? Color.red : Color.gray.opacity(0.3))
+                .fill(audioManager.metronomeFlash ? (audioManager.currentBeat == 1 && audioManager.timeSignature != .justBeat ? Color.green : Color.red) : Color.gray.opacity(0.3))
                 .frame(width: 100, height: 100)
                 .animation(.easeInOut(duration: 0.1), value: audioManager.metronomeFlash)
                 .overlay(
-                    Text("\(Int(tempo))")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(audioManager.metronomeFlash ? .white : .primary)
+                    VStack {
+                        Text("\(Int(tempo))")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(audioManager.metronomeFlash ? .white : .primary)
+                        
+                        if audioManager.timeSignature != .justBeat {
+                            Text("\(audioManager.currentBeat)")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(audioManager.metronomeFlash ? .white : .secondary)
+                        }
+                    }
                 )
             
 
             
+            // Time Signature Selection
+            VStack(spacing: 10) {
+                HStack {
+                    Text("Time Signature")
+                        .font(.headline)
+                    Spacer()
+                }
+                
+                Picker("Time Signature", selection: $audioManager.timeSignature) {
+                    ForEach(AudioManager.TimeSignature.allCases, id: \.self) { signature in
+                        Text(signature.rawValue).tag(signature)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+            }
+            
             // Tempo Slider
             VStack(spacing: 10) {
                 HStack {
-                    Text("60")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
+                    Text("Tempo")
+                        .font(.headline)
                     Spacer()
-                    
-                    Text("200")
-                        .font(.caption)
+                    Text("\(Int(tempo)) BPM")
+                        .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
                 
@@ -52,19 +74,19 @@ struct MetronomeView: View {
                             audioManager.startMetronome(tempo: Int(tempo))
                         }
                     }
-                
-                // Volume Control
-                VStack(spacing: 10) {
-                    HStack {
-                        Text("Volume")
-                            .font(.headline)
-                        Spacer()
-                        Text("\(Int(audioManager.metronomeVolume * 100))%")
-                            .foregroundColor(.secondary)
-                    }
-                    Slider(value: $audioManager.metronomeVolume, in: 0.1...1.0, step: 0.1)
-                        .accentColor(.blue)
+            }
+            
+            // Volume Control
+            VStack(spacing: 10) {
+                HStack {
+                    Text("Volume")
+                        .font(.headline)
+                    Spacer()
+                    Text("\(Int(audioManager.metronomeVolume * 100))%")
+                        .foregroundColor(.secondary)
                 }
+                Slider(value: $audioManager.metronomeVolume, in: 0.1...1.0, step: 0.05)
+                    .accentColor(.blue)
             }
             .padding(.horizontal)
             
@@ -95,11 +117,11 @@ struct MetronomeView: View {
             Spacer()
         }
         .padding()
-        .navigationTitle("Metronome")
+        // .navigationTitle("Metronome")
         .navigationBarTitleDisplayMode(.inline)
+
         .onDisappear {
             audioManager.stopMetronome()
-            isPlaying = false
         }
     }
     

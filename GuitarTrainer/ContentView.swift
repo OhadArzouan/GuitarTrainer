@@ -8,6 +8,9 @@
 import SwiftUI
 
 struct ContentView: View {
+    @AppStorage("sessionTempo") private var sessionTempo: Double = 120
+    @AppStorage("defaultTempo") private var defaultTempo: Double = 120
+    
     var body: some View {
         NavigationView {
             VStack(spacing: 30) {
@@ -18,7 +21,7 @@ struct ContentView: View {
                     .foregroundColor(.primary)
                 
                 // App Description
-                Text("Practice guitar exercises with real-time feedback")
+                Text("Practice guitar exercises to become a real musician")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -29,12 +32,20 @@ struct ContentView: View {
                 // Main Menu Buttons
                 VStack(spacing: 20) {
                     NavigationLink(destination: ExerciseSelectionView()) {
-                        MenuButton(title: "Start Exercise", icon: "play.circle.fill")
+                        MenuButton(title: "Practice Exercises", icon: "music.note")
                     }
+                    .simultaneousGesture(TapGesture().onEnded {
+                        // Initialize session tempo from default when entering exercise selection
+                        sessionTempo = defaultTempo
+                    })
                     
                     NavigationLink(destination: MetronomeView()) {
                         MenuButton(title: "Metronome", icon: "metronome")
                     }
+                    .simultaneousGesture(TapGesture().onEnded {
+                        // Initialize session tempo from default when entering metronome
+                        sessionTempo = defaultTempo
+                    })
                     
                     NavigationLink(destination: SettingsView()) {
                         MenuButton(title: "Settings", icon: "gear")
