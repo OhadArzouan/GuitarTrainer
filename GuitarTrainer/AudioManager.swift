@@ -15,6 +15,7 @@ class AudioManager: NSObject, ObservableObject {
     
     enum TimeSignature: String, CaseIterable {
         case justBeat = "1/1"
+        case twoFour = "2/4"
         case threeFour = "3/4"
         case fourFour = "4/4"
         case sixEight = "6/8"
@@ -22,6 +23,7 @@ class AudioManager: NSObject, ObservableObject {
         var beatsPerMeasure: Int {
             switch self {
             case .justBeat: return 1
+            case .twoFour: return 2
             case .threeFour: return 3
             case .fourFour: return 4
             case .sixEight: return 6
@@ -179,6 +181,19 @@ class AudioManager: NSObject, ObservableObject {
     
     func startMetronome(tempo: Int, exercise: Exercise? = nil, noteRandomizer: NoteRandomizer? = nil) {
         stopMetronome()
+        
+        // Set time signature for Note Intervals exercise based on note pattern
+        if exercise == .noteIntervals, let noteRandomizer = noteRandomizer {
+            switch noteRandomizer.notePattern {
+            case .half:
+                timeSignature = .twoFour
+            case .whole:
+                timeSignature = .fourFour
+            default:
+                timeSignature = .fourFour
+            }
+        }
+        
         // Start with beat 0, so first tick becomes beat 1
         currentBeat = 0
         let interval = 60.0 / Double(tempo)
@@ -186,10 +201,10 @@ class AudioManager: NSObject, ObservableObject {
         metronomeTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
             self.playTick()
             
-            // Handle Random Notes exercise
+            // Handle Random Notes and Note Intervals exercises
             if let exercise = exercise, let noteRandomizer = noteRandomizer {
                 DispatchQueue.main.async {
-                    noteRandomizer.onMetronomeBeat(for: exercise)
+                    noteRandomizer.onMetronomeBeat(for: exercise, currentBeat: self.currentBeat)
                 }
             }
         }

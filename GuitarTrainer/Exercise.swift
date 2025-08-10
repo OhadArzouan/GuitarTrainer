@@ -142,7 +142,8 @@ enum NotePattern: CaseIterable {
 
 class NoteRandomizer: ObservableObject {
     @Published var currentNote: String = "C"
-    @Published var notePattern: NotePattern = .quarter
+    @Published var nextNote: String = "" // For Note Intervals exercise
+    @Published var notePattern: NotePattern = .half // Default to half note for Note Intervals
     @AppStorage("useOnlyFlats") var useOnlyFlats: Bool = false
     @AppStorage("useShortIntervals") var useShortIntervals: Bool = false
     private var recentNotes: [String] = []
@@ -227,13 +228,48 @@ class NoteRandomizer: ObservableObject {
         return false
     }
     
-    func onMetronomeBeat(for exercise: Exercise) {
+    func onMetronomeBeat(for exercise: Exercise, currentBeat: Int = 0) {
         guard exercise == .randomNotes || exercise == .noteIntervals else { return }
         
-        beatCount += 1
-        if beatCount >= notePattern.beatsPerChange {
-            beatCount = 0
-            randomizeNote(for: exercise)
+        if exercise == .noteIntervals {
+            handleNoteIntervalsLogic(currentBeat: currentBeat)
+        } else {
+            // Original logic for randomNotes
+            beatCount += 1
+            if beatCount >= notePattern.beatsPerChange {
+                beatCount = 0
+                randomizeNote(for: exercise)
+            }
+        }
+    }
+    
+    private func handleNoteIntervalsLogic(currentBeat: Int) {
+        // For Note Intervals exercise with Current/Next logic
+        if currentBeat == 1 {
+            // On beat 1: Move Next to Current and clear Next
+            if !nextNote.isEmpty {
+                currentNote = nextNote
+                nextNote = ""
+                addToRecentNotes(currentNote)
+            }
+        } else {
+            // Generate Next interval based on note pattern
+            let shouldGenerateNext: Bool
+            switch notePattern {
+            case .half:
+                // For half notes with 2/4 time signature: generate Next on beat 2
+                shouldGenerateNext = (currentBeat == 2)
+            case .whole:
+                // For whole notes with 4/4 time signature: generate Next on beat 3
+                shouldGenerateNext = (currentBeat == 3)
+            default:
+                shouldGenerateNext = false
+            }
+            
+            if shouldGenerateNext && nextNote.isEmpty {
+                let availableNotes = useShortIntervals ? GuitarNote.shortIntervals : GuitarNote.intervals
+                nextNote = selectRandomNote(from: availableNotes)
+            }
         }
     }
     

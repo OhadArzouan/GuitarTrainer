@@ -84,26 +84,73 @@ struct ExerciseView: View {
             
             // Current Note Display
             VStack(spacing: 15) {
-                Text("Practice This Note:")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                
-                // Clickable note that opens dropdown
-                Button(action: {
-                    showNoteDropdown.toggle()
-                }) {
-                    Text(noteRandomizer.currentNote)
-                        .font(.system(size: getFontSize(), weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                        .padding(.vertical)
+                if exercise == .noteIntervals {
+                    // Split display for Note Intervals exercise
+                    HStack(spacing: 20) {
+                        // Current section
+                        VStack(spacing: 10) {
+                            Text("Current")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                            
+                            Button(action: {
+                                showNoteDropdown.toggle()
+                            }) {
+                                Text(noteRandomizer.currentNote)
+                                    .font(.system(size: getFontSize() * 0.8, weight: .bold, design: .rounded))
+                                    .foregroundColor(.primary)
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 12)
+                                    .background(Color.blue.opacity(0.2))
+                                    .cornerRadius(12)
+                            }
+                        }
+                        
+                        // Next section
+                        VStack(spacing: 10) {
+                            Text("Next")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
+                            
+                            Text(noteRandomizer.nextNote.isEmpty ? "—" : noteRandomizer.nextNote)
+                                .font(.system(size: getFontSize() * 0.8, weight: .bold, design: .rounded))
+                                .foregroundColor(noteRandomizer.nextNote.isEmpty ? .secondary : .primary)
+                                .padding(.horizontal, 20)
+                                .padding(.vertical, 12)
+                                .background(Color.gray.opacity(0.1))
+                                .cornerRadius(12)
+                        }
+                    }
+                } else {
+                    // Original single display for other exercises
+                    Text("Practice This Note:")
+                        .font(.headline)
+                        .foregroundColor(.secondary)
+                    
+                    // Clickable note that opens dropdown
+                    Button(action: {
+                        showNoteDropdown.toggle()
+                    }) {
+                        Text(noteRandomizer.currentNote)
+                            .font(.system(size: getFontSize(), weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                            .padding(.horizontal, 30)
+                            .padding(.vertical, 15)
+                            .background(Color.blue.opacity(0.2))
+                            .cornerRadius(15)
+                    }
                 }
-                .buttonStyle(.plain)
-                .sheet(isPresented: $showNoteDropdown) {
-                    NoteSelectionSheet(
-                        exercise: exercise,
-                        noteRandomizer: noteRandomizer,
-                        isPresented: $showNoteDropdown
-                    )
+                
+                // Note selection sheet (common for both layouts)
+                if showNoteDropdown {
+                    EmptyView()
+                        .sheet(isPresented: $showNoteDropdown) {
+                            NoteSelectionSheet(
+                                exercise: exercise,
+                                noteRandomizer: noteRandomizer,
+                                isPresented: $showNoteDropdown
+                            )
+                        }
                 }
                 
                 // Pattern selection for Random Notes and Note Intervals exercises
@@ -125,7 +172,11 @@ struct ExerciseView: View {
                     .sheet(isPresented: $showPatternSelection) {
                         PatternSelectionSheet(
                             noteRandomizer: noteRandomizer,
-                            isPresented: $showPatternSelection
+                            isPresented: $showPatternSelection,
+                            exercise: exercise,
+                            audioManager: audioManager,
+                            isActive: isActive,
+                            tempo: tempo
                         )
                     }
                 }
@@ -288,6 +339,10 @@ struct NoteSelectionSheet: View {
 struct PatternSelectionSheet: View {
     let noteRandomizer: NoteRandomizer
     @Binding var isPresented: Bool
+    let exercise: Exercise
+    let audioManager: AudioManager
+    let isActive: Bool
+    let tempo: Double
     
     var body: some View {
         NavigationView {
@@ -302,9 +357,16 @@ struct PatternSelectionSheet: View {
                     .foregroundColor(.secondary)
                 
                 VStack(spacing: 20) {
-                    ForEach(NotePattern.allCases, id: \.self) { pattern in
+                    ForEach(availablePatterns, id: \.self) { pattern in
                         Button(action: {
                             noteRandomizer.notePattern = pattern
+                            
+                            // If exercise is running, restart metronome with new pattern
+                            if isActive {
+                                audioManager.stopMetronome()
+                                audioManager.startMetronome(tempo: Int(tempo), exercise: exercise, noteRandomizer: noteRandomizer)
+                            }
+                            
                             isPresented = false
                         }) {
                             HStack {
@@ -343,6 +405,13 @@ struct PatternSelectionSheet: View {
                 isPresented = false
             })
         }
+    }
+    
+    private var availablePatterns: [NotePattern] {
+        if exercise == .noteIntervals {
+            return [.half, .whole] // Only half and whole notes for Note Intervals
+        }
+        return NotePattern.allCases // All patterns for other exercises
     }
     
     private func patternDescription(_ pattern: NotePattern) -> String {
