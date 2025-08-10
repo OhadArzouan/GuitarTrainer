@@ -182,14 +182,14 @@ class AudioManager: NSObject, ObservableObject {
     func startMetronome(tempo: Int, exercise: Exercise? = nil, noteRandomizer: NoteRandomizer? = nil) {
         stopMetronome()
         
-        // Set time signature for Note Intervals exercise based on note pattern
-        if exercise == .noteIntervals, let noteRandomizer = noteRandomizer {
+        // Set time signature for Note Intervals and Random Notes exercises based on note pattern
+        if (exercise == .noteIntervals || exercise == .randomNotes), let noteRandomizer = noteRandomizer {
             switch noteRandomizer.notePattern {
+            case .quarter:
+                timeSignature = .fourFour
             case .half:
                 timeSignature = .twoFour
             case .whole:
-                timeSignature = .fourFour
-            default:
                 timeSignature = .fourFour
             }
         }

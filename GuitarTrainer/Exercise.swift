@@ -233,8 +233,10 @@ class NoteRandomizer: ObservableObject {
         
         if exercise == .noteIntervals {
             handleNoteIntervalsLogic(currentBeat: currentBeat)
+        } else if exercise == .randomNotes {
+            handleRandomNotesLogic(currentBeat: currentBeat)
         } else {
-            // Original logic for randomNotes
+            // Fallback to original logic (shouldn't reach here)
             beatCount += 1
             if beatCount >= notePattern.beatsPerChange {
                 beatCount = 0
@@ -268,6 +270,36 @@ class NoteRandomizer: ObservableObject {
             
             if shouldGenerateNext && nextNote.isEmpty {
                 let availableNotes = useShortIntervals ? GuitarNote.shortIntervals : GuitarNote.intervals
+                nextNote = selectRandomNote(from: availableNotes)
+            }
+        }
+    }
+    
+    private func handleRandomNotesLogic(currentBeat: Int) {
+        // For Random Notes exercise with Current/Next logic (same as intervals)
+        if currentBeat == 1 {
+            // On beat 1: Move Next to Current and clear Next
+            if !nextNote.isEmpty {
+                currentNote = nextNote
+                nextNote = ""
+                addToRecentNotes(currentNote)
+            }
+        } else {
+            // Generate Next note based on note pattern
+            let shouldGenerateNext: Bool
+            switch notePattern {
+            case .quarter:
+                shouldGenerateNext = true // Generate on every beat except 1
+            case .half:
+                // For half notes with 2/4 time signature: generate Next on beat 2
+                shouldGenerateNext = (currentBeat == 2)
+            case .whole:
+                // For whole notes with 4/4 time signature: generate Next on beat 3
+                shouldGenerateNext = (currentBeat == 3)
+            }
+            
+            if shouldGenerateNext && nextNote.isEmpty {
+                let availableNotes = useOnlyFlats ? GuitarNote.flatsOnlyNotes : GuitarNote.allNotesWithEnharmonics
                 nextNote = selectRandomNote(from: availableNotes)
             }
         }

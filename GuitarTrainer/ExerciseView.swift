@@ -84,8 +84,8 @@ struct ExerciseView: View {
             
             // Current Note Display
             VStack(spacing: 15) {
-                if exercise == .noteIntervals {
-                    // Split display for Note Intervals exercise
+                if exercise == .noteIntervals || exercise == .randomNotes {
+                    // Split display for Note Intervals and Random Notes exercises
                     HStack(spacing: 20) {
                         // Current section
                         VStack(spacing: 10) {
@@ -408,8 +408,8 @@ struct PatternSelectionSheet: View {
     }
     
     private var availablePatterns: [NotePattern] {
-        if exercise == .noteIntervals {
-            return [.half, .whole] // Only half and whole notes for Note Intervals
+        if exercise == .noteIntervals || exercise == .randomNotes {
+            return [.half, .whole] // Only half and whole notes for Note Intervals and Random Notes
         }
         return NotePattern.allCases // All patterns for other exercises
     }
